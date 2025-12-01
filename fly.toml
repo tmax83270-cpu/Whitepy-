@@ -1,0 +1,7 @@
+app = "mon-bot"
+
+[build]
+  builder = "heroku/buildpacks:20"
+
+[env]
+  TOKEN = "8476960807:AAGLf9Fy05l3A390iBjdigCNOYwtWNnVC0k"
