@@ -1,30 +1,18 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
-import os
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-TOKEN = os.getenv("TELEGRAM_TOKEN")  # Ton token dans les variables d'environnement
+# Remplace par ton token BotFather
+TOKEN = "8476960807:AAGLf9Fy05l3A390iBjdigCNOYwtWNnVC0k"
 
-def start(update: Update, context: CallbackContext):
-    chat_id = update.effective_chat.id
-    texte = "Salut ! Bienvenue sur mon bot 😃"
-    boutons = [
-        [InlineKeyboardButton("Info", callback_data='info')],
-        [InlineKeyboardButton("Aide", callback_data='aide')]
-    ]
-    clavier = InlineKeyboardMarkup(boutons)
-    context.bot.send_photo(chat_id=chat_id, photo=open("image.jpg","rb"), caption=texte, reply_markup=clavier)
+# Fonction appelée quand quelqu'un envoie /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Bonjour ! Ton bot fonctionne 😄")
 
-def button(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    if query.data == 'info':
-        query.edit_message_text(text="Voici les infos du bot !")
-    elif query.data == 'aide':
-        query.edit_message_text(text="Voici l'aide du bot !")
+# Créer l'application du bot
+app = ApplicationBuilder().token(TOKEN).build()
 
-updater = Updater(TOKEN, use_context=True)
-dispatcher = updater.dispatcher
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(CallbackQueryHandler(button))
-updater.start_polling()
-updater.idle()
+# Ajouter le handler pour la commande /start
+app.add_handler(CommandHandler("start", start))
+
+# Lancer le bot en continu
+app.run_polling()
