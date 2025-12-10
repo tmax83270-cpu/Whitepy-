@@ -1,35 +1,35 @@
 import os
 from flask import Flask, request
-from telegram import Bot, Update
-from telegram.ext import Dispatcher, CommandHandler
+from telegram import Update, Bot
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-# Token depuis les secrets Render
+# Récupère ton token depuis les Environment Variables Render
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
+
+# Crée l'application Flask pour le serveur Render
+app = Flask(__name__)
 bot = Bot(token=TOKEN)
 
-# Créer l'application Flask
-app = Flask(__name__)
-
-# Créer le dispatcher
-dispatcher = Dispatcher(bot, None, workers=0)
+# Crée l'application Telegram pour gérer les commandes
+application = ApplicationBuilder().token(TOKEN).build()
 
 # Commande /start
-def start(update: Update, context):
-    update.message.reply_text("Bot actif !")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Bot actif !")
 
-dispatcher.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("start", start))
 
 # Route webhook
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
+    application.update_queue.put(update)
     return "ok"
 
 # Port fourni par Render
 PORT = int(os.environ.get("PORT", 5000))
 
 if __name__ == "__main__":
-    # Configurer le webhook avec ton URL publique
+    # Configure le webhook avec ton URL Render
     bot.set_webhook(f"https://whitepy.onrender.com/{TOKEN}")
     app.run(host="0.0.0.0", port=PORT)
