@@ -1,19 +1,35 @@
 import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from flask import Flask, request
+from telegram import Bot, Update
+from telegram.ext import Dispatcher, CommandHandler
 
-# Récupère le token depuis les variables d'environnement Fly.io
-TOKEN = os.environ.get("TOKEN")
+# Token depuis les secrets Render
+TOKEN = os.environ.get("TELEGRAM_TOKEN")
+bot = Bot(token=TOKEN)
 
-# Fonction appelée quand quelqu'un envoie /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bonjour ! Ton bot fonctionne 😄")
+# Créer l'application Flask
+app = Flask(__name__)
 
-# Créer l'application du bot
-app = ApplicationBuilder().token(TOKEN).build()
+# Créer le dispatcher
+dispatcher = Dispatcher(bot, None, workers=0)
 
-# Ajouter le handler pour la commande /start
-app.add_handler(CommandHandler("start", start))
+# Commande /start
+def start(update: Update, context):
+    update.message.reply_text("Bot actif !")
 
-# Lancer le bot en continu
-app.run_polling()
+dispatcher.add_handler(CommandHandler("start", start))
+
+# Route webhook
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "ok"
+
+# Port fourni par Render
+PORT = int(os.environ.get("PORT", 5000))
+
+if __name__ == "__main__":
+    # Configurer le webhook avec ton URL publique
+    bot.set_webhook(f"https://whitepy.onrender.com/{TOKEN}")
+    app.run(host="0.0.0.0", port=PORT)
